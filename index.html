@@ -62,7 +62,18 @@
             if (!isAdmin) return;
 
             const usersTable = document.getElementById("usersTable");
-            usersTable.innerHTML = "<tr><th>User ID</th><th>Name</th><th>Balance</th><th>Action</th></tr>";
+            usersTable.innerHTML = `
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Region</th>
+                    <th>Currency</th>
+                    <th>Balance</th>
+                    <th>Action</th>
+                </tr>
+            `;
 
             const querySnapshot = await getDocs(collection(db, "users"));
             querySnapshot.forEach((docSnap) => {
@@ -71,6 +82,10 @@
                     <tr>
                         <td>${docSnap.id}</td>
                         <td>${userData.name || "N/A"}</td>
+                        <td>${userData.email || "N/A"}</td>
+                        <td>${userData.phone || "N/A"}</td>
+                        <td>${userData.region || "N/A"}</td>
+                        <td>${userData.currency || "N/A"}</td>
                         <td><input type="number" id="balance-${docSnap.id}" value="${userData.balance || 0}"></td>
                         <td><button onclick="updateBalance('${docSnap.id}')">Update</button></td>
                     </tr>
@@ -103,9 +118,9 @@
             }
         });
 
-        // Expose updateBalance function globally for buttons
+        // Expose functions globally for button clicks
         window.updateBalance = updateBalance;
-        window.login = login; // Ensure login function is globally accessible
+        window.login = login;
     </script>
 </head>
 <body>
@@ -120,11 +135,15 @@
 
     <!-- Admin Panel (Hidden for non-admins) -->
     <div id="adminPanel" style="display: none;">
-        <h2>User Balances</h2>
+        <h2>User Information</h2>
         <table id="usersTable" border="1">
             <tr>
                 <th>User ID</th>
                 <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Region</th>
+                <th>Currency</th>
                 <th>Balance</th>
                 <th>Action</th>
             </tr>
