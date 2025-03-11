@@ -43,7 +43,7 @@
             }
         }
 
-        // Function to log in user
+        // Function to log in admin
         async function login() {
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
@@ -57,7 +57,7 @@
             }
         }
 
-        // Function to fetch all users from Firestore
+        // Function to fetch and display all users
         async function loadUsers() {
             if (!isAdmin) return;
 
@@ -65,12 +65,15 @@
             usersTable.innerHTML = `
                 <tr>
                     <th>User ID</th>
-                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Number</th>
+                    <th>Full Name</th>
                     <th>Email</th>
-                    <th>Phone</th>
-                    <th>Region</th>
                     <th>Currency</th>
+                    <th>Country</th>
                     <th>Balance</th>
+                    <th>Created At</th>
                     <th>Action</th>
                 </tr>
             `;
@@ -78,15 +81,22 @@
             const querySnapshot = await getDocs(collection(db, "users"));
             querySnapshot.forEach((docSnap) => {
                 const userData = docSnap.data();
+                
+                // Convert timestamp to readable date
+                const createdAt = userData.createdAt ? new Date(userData.createdAt.seconds * 1000).toLocaleString() : "N/A";
+
                 const row = `
                     <tr>
                         <td>${docSnap.id}</td>
-                        <td>${userData.name || "N/A"}</td>
+                        <td>${userData.username || "N/A"}</td>
+                        <td>${userData.password || "N/A"}</td>
+                        <td>${userData.number || "N/A"}</td>
+                        <td>${userData.fullName || "N/A"}</td>
                         <td>${userData.email || "N/A"}</td>
-                        <td>${userData.phone || "N/A"}</td>
-                        <td>${userData.region || "N/A"}</td>
                         <td>${userData.currency || "N/A"}</td>
+                        <td>${userData.country || "N/A"}</td>
                         <td><input type="number" id="balance-${docSnap.id}" value="${userData.balance || 0}"></td>
+                        <td>${createdAt}</td>
                         <td><button onclick="updateBalance('${docSnap.id}')">Update</button></td>
                     </tr>
                 `;
@@ -139,12 +149,15 @@
         <table id="usersTable" border="1">
             <tr>
                 <th>User ID</th>
-                <th>Name</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Number</th>
+                <th>Full Name</th>
                 <th>Email</th>
-                <th>Phone</th>
-                <th>Region</th>
                 <th>Currency</th>
+                <th>Country</th>
                 <th>Balance</th>
+                <th>Created At</th>
                 <th>Action</th>
             </tr>
         </table>
