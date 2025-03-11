@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Firebase configuration (replace with your own)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let isAdmin = false;
+
+        // Function to check if the user is an admin
+        async function checkAdmin(uid) {
+            const adminRef = doc(db, "admins", uid);
+            const adminSnap = await getDoc(adminRef);
+            isAdmin = adminSnap.exists();
+
+            if (isAdmin) {
+                document.getElementById("adminPanel").style.display = "block";
+                document.getElementById("loginForm").style.display = "none";
+                loadUsers(); // Fetch all users after login
+            } else {
+                alert("Access denied! You are not an admin.");
+                auth.signOut();
+            }
+        }
+
+        // Function to log in user
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                alert("Login successful!");
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        // Function to fetch all users from Firestore
+        async function loadUsers() {
+            const usersTable = document.getElementById("usersTable");
+            usersTable.innerHTML = "<tr><th>User ID</th><th>Name</th><th>Balance</th><th>Action</th></tr>";
+
+            const querySnapshot = await getDocs(collection(db, "users"));
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data();
+                const row = `
+                    <tr>
+                        <td>${doc.id}</td>
+                        <td>${userData.name || "N/A"}</td>
+                        <td><input type="number" id="balance-${doc.id}" value="${userData.balance || 0}"></td>
+                        <td><button onclick="updateBalance('${doc.id}')">Update</button></td>
+                    </tr>
+                `;
+                usersTable.innerHTML += row;
+            });
+        }
+
+        // Function to update user balance
+        async function updateBalance(userId) {
+            if (!isAdmin) {
+                alert("Unauthorized access!");
+                return;
+            }
+
+            const newBalance = document.getElementById(`balance-${userId}`).value;
+
+            try {
+                await setDoc(doc(db, "users", userId), {
+                    balance: parseFloat(newBalance)
+                }, { merge: true });
+
+                alert("Balance updated successfully!");
+            } catch (error) {
+                alert("Error updating balance: " + error);
+            }
+        }
+
+        // Listen for login state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                checkAdmin(user.uid);
+            }
+        });
+
+        // Expose updateBalance function globally for buttons
+        window.updateBalance = updateBalance;
+    </script>
+</head>
+<body>
+
+    <!-- Admin Login Form -->
+    <div id="loginForm">
+        <h2>Admin Login</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <!-- Admin Panel (Hidden for non-admins) -->
+    <div id="adminPanel" style="display: none;">
+        <h2>User Balances</h2>
+        <table id="usersTable" border="1">
+            <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Balance</th>
+                <th>Action</th>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>
